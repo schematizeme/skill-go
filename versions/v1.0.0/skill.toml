@@ -1,0 +1,12 @@
+slug = "go"
+name = "schematize-go"
+tag = "Backend · Go/Rust"
+status = "stable"
+order = 1
+current_version = "1.0.0"
+href = "/go"
+
+[descriptions]
+pt = "Padrões normativos de engenharia para backends em Go e Rust."
+en = "Normative engineering standards for Go and Rust backends."
+es = "Estándares normativos de ingeniería para backends en Go y Rust."

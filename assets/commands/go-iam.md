@@ -18,7 +18,7 @@ Confirme/scaffolde que o auth é **aplicação SEPARADA** (`references/iam.md` �
 - Microserviço **Go** próprio `<projeto>_auth_go` + front próprio `<projeto>_authfront`,
   servidos em **`auth.<domain>`** — **VETADO** monolith apensado (nem `internal/auth` do
   serviço principal).
-- Repo/deploy/**user Linux + systemd isolados** por conta própria (casa com `ops.md` §3).
+- Repo/deploy/**user Linux + systemd isolados** por conta própria (casa com `schematize-engineering` -> `ops.md` §3).
 - App principal e clientes **delegam por OIDC/OAuth2.1 + PKCE**; a **chave de assinatura só
   no auth Go**, consumidores validam por **JWKS público** (middleware Go cacheando o JWKS).
 

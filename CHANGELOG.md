@@ -1,5 +1,22 @@
 # Changelog — schematize-go
 
+Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
+com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+
+## [1.11.0] — 2026-08-21
+Saneamento do catálogo conforme a vistoria de 2026-08-21.
+
+### Adicionado
+- **Go moderno, onde ele muda o jeito de escrever** (`references/padroes-codigo.md`): **`iter.Seq`/range-over-func** (com `iter.Seq2[T, error]` e o motivo — o erro vai **por dentro** da sequência, matando o antipadrão de guardar o erro num campo do iterador), **`go tool`** (o fim do hack do `tools.go`: CI e dev na mesma versão da ferramenta, sem `go install` global) e **`testing/synctest`** (detalhado em `references/testes.md`), que é a resposta ao `time.Sleep(50ms)` "para dar tempo" — origem do flaky no CI carregado.
+- **`govulncheck` no pipeline MUST** (`references/seguranca.md`), com o que o diferencia de um SCA qualquer: **alcançabilidade** — *SCA que lista toda CVE de toda dependência transitiva vira ruído, e ruído se ignora*.
+
+### Corrigido
+- `references/iam.md`: o parâmetro `cap` **sombreava o builtin** (com ele, `cap(slice)` fica inacessível e o compilador não reclama) → `maxPerRun`; e o body da resposta HTTP passou a ser **drenado antes de fechar**, inclusive no caminho de erro — fechar sem drenar descarta a conexão keep-alive e vira **socket churn** em volume.
+- O rol de linguagens no `anti-padroes.md` dizia "backend novo só em Go/Rust" — a deriva por cópia que a vistoria chama de Classe C. Agora é o rol sancionado com ADR de fit, e **Go é o default pragmático em empate**, não o único permitido.
+
+### Mudado
+- `anti-padroes.md`, `arquitetura.md` e `entrega.md` viraram **ponteiro**: os blocos idênticos à base foram podados mecanicamente (`tools/podar-clone.mjs`), e o banner explica por que a numeração salta.
+
 ## [1.10.0] — 2026-08-20
 Piso "efeito externo NUNCA sai de não-produção" no recorte **Go** — o guard idiomático, com código pronto pra copiar.
 
@@ -16,9 +33,6 @@ Piso "efeito externo NUNCA sai de não-produção" no recorte **Go** — o guard
 Correção da contradição do muro pré-login de IAM (alinha ao `iam.md` da schematize-engineering).
 ### Mudado
 - **/go-iam**: removido o "2º fator forte obrigatório antes do acesso pleno" e o "força 2º fator no 1º login" — o muro pré-login / deadlock de bootstrap VETADO pela norma. Agora senha+Email OTP = 2FA baseline; fator forte é nudge + step-up just-in-time.
-
-
-Formato: [Keep a Changelog]; versionamento: SemVer.
 
 ## [1.9.1] — 2026-08-18
 Q.A. repointado para a skill dedicada **schematize-qa**.

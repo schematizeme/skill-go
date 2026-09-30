@@ -1,7 +1,7 @@
 ---
 name: schematize-go
 metadata:
-  version: 1.11.0
+  version: 1.12.0
 description: Padrões normativos de engenharia da casa (arquitetura, segurança, testes, pentest, dados, observabilidade, deploy, archive). Use SEMPRE que for projetar, gerar, revisar ou refatorar qualquer código backend, API, frontend, serviço, schema, migration, infra, CI/CD, teste ou deploy — mesmo que o usuário não cite "padrão" explicitamente. Aplique também ao decidir arquitetura, escolher stack, modelar eventos/banco, escrever testes/pentest, configurar observabilidade, ou produzir ADR/runbook/archive. Contém pisos inegociáveis de segurança (segredo nunca no frontend, sem SQL concatenado, auth server-side, archive obrigatório) que vetam atalhos inseguros.
 ---
 
@@ -9,7 +9,7 @@ description: Padrões normativos de engenharia da casa (arquitetura, segurança,
 
 Conjunto normativo que rege como software é projetado, construído, testado e operado aqui. Esta skill existe para que toda entrega — humana ou assistida por IA — siga os mesmos padrões de clareza, segurança e observabilidade, sem reinventar nem cortar caminho.
 
-**Versão:** skill `schematize-go` v1.11.0. Changelog em `CHANGELOG.md`.
+**Versão:** skill `schematize-go` v1.12.0. Changelog em `CHANGELOG.md`.
 
 ## Precedência e herança (leia antes de divergir)
 

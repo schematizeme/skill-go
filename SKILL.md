@@ -3,9 +3,8 @@ name: schematize-go
 metadata:
   version: 1.13.0
 description: >-
-  Padrões para backend em Go: arquitetura, segurança, IAM, testes, dados, observabilidade, deploy e archive. Use ao
-  projetar, revisar ou refatorar código Go (go.mod, *.go, go test, golangci-lint): serviço, API, worker, migration ou
-  CI. Go entra no rol por fit + ADR.
+  Backend em Go: arquitetura, segurança, IAM, testes, dados, observabilidade, deploy e archive. Use ao projetar ou
+  revisar código Go (go.mod, *.go, golangci-lint): serviço, API, worker ou CI. Go entra por fit + ADR.
 ---
 
 # Padrões de Engenharia da Casa — recorte Go

@@ -9,7 +9,7 @@ jobs:
   standards-gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with: { fetch-depth: 0 }
       - name: Gate de padrões (DoD/§37) no diff
         run: bash .claude/skills/schematize-go/scripts/check-diff.sh "origin/${{ github.base_ref || 'main' }}"
@@ -26,7 +26,7 @@ jobs:
   go-lint-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with: { go-version-file: go.mod }   # a toolchain vem do go.mod (build reprodutível)
       - name: go vet
@@ -43,7 +43,7 @@ jobs:
   test-kit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Smoke + security + authz + hardening (PR — a `schematize-qa` (gates de CI, `references/execucao.md` secao 6))
         run: |
           # <projeto> test smoke && <projeto> test security && <projeto> test authz && <projeto> test hardening
@@ -54,7 +54,7 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Trivy fs
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with: { scan-type: fs, severity: HIGH,CRITICAL, exit-code: '1' }

@@ -11,6 +11,10 @@
 > auth pronto ≠ IAM da casa"*; §2.1 **parâmetros mínimos de argon2id**. Aqui elas aparecem só no que
 > muda de linguagem (a biblioteca, o tipo, o runtime).
 
+> **Dona do tema: `schematize-iam`.** Topologia do broker, fatores, sessão, ReBAC, risco e recuperação vivem em
+> `schematize-iam → references/` (`topologia.md`, `fatores.md`, `sessao.md`, `authz-rebac.md`, `recuperacao-risco.md`);
+> a normativa agnóstica de base é `schematize-engineering → references/iam.md`. Este arquivo guarda só o recorte de linguagem.
+
 ## 1. Topologia — auth é uma APLICAÇÃO SEPARADA (microserviço Go)
 
 - **Microserviço de auth em Go** (`<projeto>_auth_go`) + **front de auth** próprio
@@ -396,11 +400,9 @@ cap, janela com expiração, subdomínio de envio separado) — faltou uma, não
 
 ## 4. Fluxos
 
-**Onboarding:** cita um email → **verifica** → **cria senha** (ou já passkey/app) → **pronto:
-2FA baseline (senha + Email OTP) e acesso baseline pleno**. Só **depois**, já dentro, o sistema
-**sugere** (nudge, não obriga) reforçar: 2º email de backup + fator forte. **Nunca se barra o
-acesso por não ter fator forte** — ele é pedido *just-in-time* na 1ª ação sensível (step-up)
-ou sob risco (§9).
+**Onboarding:** email verificado -> senha (ou passkey/app) -> acesso baseline pleno com 2FA (senha + Email OTP). Fator forte
+é nudge depois de entrar e step-up just-in-time na ação sensível ou sob risco (§9); **nunca** muro pré-login.
+Fluxos completos e invariante de troca de fator: `schematize-iam → references/fatores.md`.
 
 ## 5. Multi-tenant + RBAC/ABAC — motor ReBAC (estilo Zanzibar)
 
@@ -416,26 +418,19 @@ ou sob risco (§9).
 
 ## 6. Sessão, multi-dispositivo e logout
 
-- **Refresh rotativo com detecção de reuso** (reusou um refresh já rotacionado → revoga a
-  **família** inteira). O refresh token é opaco (CSPRNG, `crypto/rand`), hasheado no store.
-
-- **Botão "Sair" bem visível → kill IRREVERSÍVEL da sessão:** não basta apagar o cookie —
-  o handler de logout do auth Go **revoga o refresh token (e a família), apaga o registro
-  de sessão server-side, joga o `jti` na denylist (Redis/DB) até expirar e desassocia o
-  push token do device**. Depois do logout, aquela sessão é irrecuperável: nem replay, nem
-  refresh, nem "voltar o cookie" reativa. O middleware de validação de access token
-  **consulta a denylist de `jti`** em toda request (cache curto).
+- **Refresh rotativo com detecção de reuso** (reusou -> revoga a família inteira); refresh opaco, aleatório de CSPRNG (`crypto/rand`),
+  hasheado no store; família e `jti` rastreados server-side.
+- **Logout irreversível:** revoga refresh e família, apaga a sessão server-side, `jti` na denylist até expirar, desassocia o push token.
+  Em Go: o handler de logout do auth Go; o middleware de validação consulta a denylist de `jti` (cache curto).
+- Modelo completo, cookies e gate: `schematize-iam → references/sessao.md`.
 
 ## 7. Migração de auth legado — PRIORIDADE 0
 
-Existe auth no padrão antigo → **portar pra este IAM é prioridade máxima** (segurança
-inegociável; pode gastar o que precisar). Estratégia **strangler-fig** (casa com
-schematize-node quando o legado é Node): dual-run, **re-hash preguiçoso** no login
-(verifica no hash legado, regrava em **argon2id**), mapeia registros legados → modelo novo
-(dedupe de emails, cunha IDs internos ULID/UUIDv7), **ativa o Email OTP always-on como 2º
-fator baseline** (a conta migrada já entra em 2FA sem muro) e **incentiva enrolar fator forte**
-(step-up para sensível), **revoga sessões legadas** e **nunca confia na authz legada**
-(re-deriva as tuplas ReBAC). O auth migrado nasce já como **microserviço Go separado** (§1).
+Auth legado existente: portar para este IAM é prioridade máxima (strangler-fig, dual-run). Em Go: **re-hash preguiçoso**
+no login (verifica no algoritmo antigo, regrava em argon2id com `golang.org/x/crypto/argon2` (`IDKey`)); o auth migrado nasce como microserviço Go separado (§1).
+Passos de migração (dedupe de emails, IDs ULID/UUIDv7, Email OTP baseline, revogar sessões legadas, re-derivar authz pelas tuplas):
+`schematize-iam → references/recuperacao-risco.md` §6. Legado Node/PHP segue a regra de migração da casa
+(`schematize-engineering → references/linguagens.md`).
 
 ## 8. Rotina agressiva de testes (detalhe na schematize-pentest)
 
@@ -446,33 +441,11 @@ fator baseline** (a conta migrada já entra em 2FA sem muro) e **incentiva enrol
 
 ## 9. Autenticação adaptativa por risco (robusta) + transversais
 
-A resposta ao login **varia com o risco calculado** (não é fixa) — é o que torna a conta
-difícil de tomar sem chatear o legítimo:
-
-- **Log de sessões/tentativas:** cada tentativa e sessão gravam IP/ASN+reputação, device
-  fingerprint, geo, UA, horário, resultado e **score de risco** — na view de sessões (§6) e em
-  audit log imutável. É o insumo do score.
-
-- **Score por tentativa:** IP suspeito/novo (Tor/proxy/ASN de abuso), device novo, geovelocidade
-  impossível, velocity/brute, hit de honeypot. Baixo = fluxo normal; alto = escala.
-
-- **Escalonamento por risco (2FA→3FA):** sob risco, exige um **fator a mais na ordem de força**
-  — **senha → código por email → app OTP/chave**. Acertar senha+email não basta em contexto
-  suspeito. Mesmo motor do step-up (§3), disparado pelo **contexto**, não só pela ação.
-
-- **Negação deceptiva / tarpit (falso negativo sob risco):** em contexto suspeito, mesmo com
-  **senha correta** o serviço pode responder **genérico `invalid_credentials` uma vez** enquanto
-  **computa server-side que a credencial estava certa** e marca que a **próxima** tentativa
-  correta **passa** (já com os fatores escalados). Seguro porque: **resposta e tempo IDÊNTICOS**
-  ao erro real (sem oráculo — use comparação em tempo constante e o mesmo path de resposta);
-  estado "próxima passa" **curto e escopado** (conta+IP+device, TTL curto, expira sozinho, nunca
-  vira lockout do legítimo); **soma-se** ao 3FA, não substitui; tudo logado.
-
-- **Honeypot:** contas/campos/rotas isca; qualquer interação = sinal forte de hostil → score
-  alto, tarpit/deceção, alerta. Nunca serve tráfego real.
-
-- **Notifica o usuário:** login novo/suspeito, novo device, mudança de credencial → aviso nos
-  canais verificados, com "não fui eu" (revoga + força reforço).
+A resposta ao login varia com o risco calculado. Piso: log de sessões/tentativas com score (IP/ASN, device, geo, velocity, honeypot);
+escalonamento 2FA->3FA sob risco (senha -> email -> app/chave); negação deceptiva com resposta e tempo idênticos ao erro real
+(comparação em tempo constante, estado curto e escopado, nunca lockout do legítimo); honeypot; anti-automação (rate-limit, backoff,
+lockout progressivo conta+IP); notificação ao usuário com "não fui eu". Detalhe e parâmetros:
+`schematize-iam → references/recuperacao-risco.md` §2-§4.
 
 ### Transversais (sempre)
 

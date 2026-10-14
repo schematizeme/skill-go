@@ -3,8 +3,7 @@ name: schematize-go
 metadata:
   version: 1.13.1
 description: >-
-  Backend em Go: arquitetura, segurança, IAM, testes, dados, observabilidade, deploy e archive. Use ao projetar ou
-  revisar código Go (go.mod, *.go, golangci-lint): serviço, API, worker ou CI. Go entra por fit + ADR.
+  Backend em Go: arquitetura, IAM, testes, dados, deploy. Use ao projetar ou revisar go.mod, *.go, golangci-lint: serviço, API, worker, CI. Entra por fit + ADR.
 ---
 
 # Padrões de Engenharia da Casa — recorte Go

@@ -1,7 +1,7 @@
 ---
 name: schematize-go
 metadata:
-  version: 1.13.0
+  version: 1.13.1
 description: >-
   Backend em Go: arquitetura, segurança, IAM, testes, dados, observabilidade, deploy e archive. Use ao projetar ou
   revisar código Go (go.mod, *.go, golangci-lint): serviço, API, worker ou CI. Go entra por fit + ADR.
@@ -11,7 +11,7 @@ description: >-
 
 Conjunto normativo que rege como software é projetado, construído, testado e operado aqui. Esta skill existe para que toda entrega — humana ou assistida por IA — siga os mesmos padrões de clareza, segurança e observabilidade, sem reinventar nem cortar caminho.
 
-**Versão:** skill `schematize-go` v1.13.0. Changelog em `CHANGELOG.md`.
+**Versão:** skill `schematize-go` v1.13.1. Changelog em `CHANGELOG.md`.
 
 ## Precedência e herança (leia antes de divergir)
 

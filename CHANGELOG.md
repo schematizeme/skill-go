@@ -3,6 +3,22 @@
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.13.0] — 2026-10-14
+Saneamento da skill: a description deixa de reivindicar "qualquer backend/frontend/infra" e o texto deixa de tratar Go como régua das irmãs.
+
+### Adicionado
+- `references/concorrencia.md`: `context`, `errgroup` (`SetLimit`), cancelamento, goroutine leak + `goleak`, race detector, `sync` vs canais, backpressure/shutdown e `testing/synctest` — o equivalente Go de `async-concorrencia.md` da skill Rust. Versões dependentes ficam em `stack-versoes.md`.
+- CI: `go vet`, `golangci-lint` v2, `govulncheck` e `go test -race` (job `go-lint-test`); Trivy/Gitleaks/checkout pinados por SHA.
+
+### Alterado
+- Description reescrita (≤350 chars) ancorada em Go (`go.mod`, `*.go`, `go test`, `golangci-lint`); `skill.toml`: tag e descrições pt/en/es só de Go.
+- Piso "Backend novo só em Go ou Rust; Node proibido" (`SKILL.md`, `assets/CLAUDE.md`) trocado pelo texto do rol sancionado (fit + ADR); `references/arquitetura.md` sem tabela "padrão da casa → Go", Node/PHP saem "para o rol" e PHP migra por funcionalidade quando tocado, com ponteiro para `schematize-engineering` → `references/linguagens.md`.
+- Hash de senha: argon2id-only para senha nova (bcrypt/PBKDF2 só como legado a migrar), com ponteiro para `schematize-engineering` → `references/iam.md`; pisos com idioma JS/Rust (`Math.random`, `catch {}`, `@ts-ignore`, `unwrap`) trocados por equivalentes Go (`math/rand`, `_ = err`, `//nolint`).
+- Tabela de comandos completa (`/go-load`, `/go-claude`); mapa de references inclui `stack-versoes.md` e `concorrencia.md`; `seguranca.md` deixa de ser anunciado como cobrindo "frontend".
+
+### Removido
+- `assets/lint/eslint.layers.cjs` (config JS dentro da skill Go, sem referência).
+
 ## [1.12.2] — 2026-09-30
 O piso de orquestração passa a ser **herdado** da base em vez de copiado à mão: uma mudança na engineering não exige mais editar 38 arquivos.
 

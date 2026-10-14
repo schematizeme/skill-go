@@ -18,6 +18,19 @@
   build ser reprodutível entre máquina e CI.
 - Imagem base **por digest** (`golang:1.x-alpine@sha256:…`), nunca por tag móvel.
 
+## Concorrência — recursos que dependem de versão (✔ verificado em 2026-10-14, go.dev/doc)
+
+Corpo normativo: `references/concorrencia.md`.
+
+- **`testing/synctest` com `synctest.Test`**: GA no **1.25**. No 1.24 existia só atrás de
+  `GOEXPERIMENT=synctest` com API diferente (`synctest.Run`), removida no 1.26. Projeto em 1.24 não
+  usa o exemplo do reference sem subir a versão.
+- **`sync.WaitGroup.Go`**: a partir do **1.25**.
+- **Variável de laço por iteração**: a partir do **1.22**, e só vale se o `go.mod` declara `go >= 1.22`.
+- **Perfil `goroutineleak`** (`runtime/pprof`): **experimental** no 1.26, atrás de
+  `GOEXPERIMENT=goroutineleakprofile`; reverificar antes de depender dele.
+- **`goleak`** (`go.uber.org/goleak`): corrente **v1.3.0** em 2026-10-14.
+
 ## Ferramental
 
 | Ferramenta | Papel | Nota |

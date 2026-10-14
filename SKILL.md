@@ -2,10 +2,13 @@
 name: schematize-go
 metadata:
   version: 1.12.2
-description: Padrões normativos de engenharia da casa (arquitetura, segurança, testes, pentest, dados, observabilidade, deploy, archive). Use SEMPRE que for projetar, gerar, revisar ou refatorar qualquer código backend, API, frontend, serviço, schema, migration, infra, CI/CD, teste ou deploy — mesmo que o usuário não cite "padrão" explicitamente. Aplique também ao decidir arquitetura, escolher stack, modelar eventos/banco, escrever testes/pentest, configurar observabilidade, ou produzir ADR/runbook/archive. Contém pisos inegociáveis de segurança (segredo nunca no frontend, sem SQL concatenado, auth server-side, archive obrigatório) que vetam atalhos inseguros.
+description: >-
+  Padrões da casa para backend em Go: arquitetura, segurança, IAM, testes, dados, observabilidade, deploy e archive.
+  Use ao projetar, gerar, revisar ou refatorar código Go (go.mod, *.go, go test, golangci-lint) — serviço, API, worker,
+  migration ou CI de projeto Go. Go é uma linguagem do rol sancionado, escolhida por fit + ADR.
 ---
 
-# Padrões de Engenharia da Casa
+# Padrões de Engenharia da Casa — recorte Go
 
 Conjunto normativo que rege como software é projetado, construído, testado e operado aqui. Esta skill existe para que toda entrega — humana ou assistida por IA — siga os mesmos padrões de clareza, segurança e observabilidade, sem reinventar nem cortar caminho.
 
@@ -48,6 +51,8 @@ Digite `/go-help` pra ver todos. Em resumo:
 | Comando | O que faz |
 |---|---|
 | `/go-help` | lista todos os comandos do schematize-go |
+| `/go-load` | carrega à força TODO o corpo normativo no contexto e passa a aplicá-lo no projeto atual |
+| `/go-claude` | cria ou atualiza (com backup) o `CLAUDE.md` da raiz; mescla/avisa se detectar `CLAUDE.md` de outra skill |
 | `/go-cc` | context compact: gera context.md + checklist.md no archive e roda `/compact` |
 | `/go-handoff` | gera o handoff (context.md + checklist.md) **sem** compactar — pra fim de sessão |
 | `/go-qa` | Q.A. no contexto Go — wrapper fino da skill **schematize-qa** (`/qa-plan` → `/qa-run`) com `go test -race` |
@@ -71,10 +76,11 @@ Mapa de references — leia o que casa com a tarefa:
 | **Limites de código (arquivo ≤750: ~500 úteis + ~250 comentário; flag >300 úteis), uma função/arquivo, comentários, MAPA** | `references/padroes-codigo.md` |
 | Arquitetura, camadas, DDD, repositórios, anti-monólito, shared libs, linguagens, CQRS | `references/arquitetura.md` |
 | Eventos/mensageria, banco, cache, APIs, resiliência, jobs | `references/dados-eventos.md` |
-| Segurança, auth, JWT, multi-tenancy, LGPD, **frontend/segredos** | `references/seguranca.md` |
+| Segurança, auth, JWT, multi-tenancy, LGPD, segredos | `references/seguranca.md` |
 | **IAM (identidade+autorização): auth como microserviço Go separado (`auth.<domain>`), ID≠email, ≥2 fatores/passkey/Resend/Twilio, ReBAC multi-tenant, sessão longa/logout irreversível, migração de legado** | `references/iam.md` |
 | **Efeito externo fora de prd (e-mail/SMS/push/webhook): `EmailProvider` + sink default + guard decorator com `error` + cap atômico, e o teste que espera a recusa** | `references/iam.md` (§3.1) |
 | **Cadeia de suprimentos: lockfile, SBOM, scan que trava, imagem mínima/pinada/assinada, SLSA, segredo no build** | `references/cadeia-suprimentos.md` |
+| **Concorrência em Go: `context`, `errgroup`, cancelamento, goroutine leak (`goleak`), race detector, `sync` vs canais, `testing/synctest`** | `references/concorrencia.md` |
 | Testes — o recorte Go (runner, sintaxe, armadilhas do dialeto). **A disciplina é da `schematize-qa`.** | `references/testes.md` |
 | Observabilidade, healthchecks, performance, FinOps | `references/observabilidade.md` |
 | Config, deploy/K8s, git/PR, ownership, runbooks/incidentes, ADR, **archive** (§20–28) | `references/operacao.md` |
@@ -82,22 +88,23 @@ Mapa de references — leia o que casa com a tarefa:
 | Templates, feature flags, IA assistida, DoD, evolução, índice de funcionalidades (§29+) | `references/entrega.md` |
 | Filosofia, aplicação universal e a lista completa de anti-padrões vetados | `references/anti-padroes.md` |
 | Gestão de contexto em sessões longas no Claude Code (handoff, hooks) | `references/contexto-claude-code.md` |
+| Versões e limiares voláteis (linha de Go suportada, ferramental, imagem base) | `references/stack-versoes.md` |
 
 ## Pisos inegociáveis (VETADO — sem ADR de exceção)
 
 Estes nunca são violados, nem "pra funcionar", nem "pra ir mais rápido". A lista completa com veto + caminho certo está em `references/anti-padroes.md` (§37). Os que mais aparecem em código gerado às pressas:
 
-- **Segredo nunca no cliente.** Nada de API key, secret de JWT, senha de banco, service-role key ou token em bundle do browser, nem em `NEXT_PUBLIC_*`/`VITE_*`. Segredo só server-side (BFF/route handler/secret manager). Detalhe em `references/seguranca.md`.
+- **Segredo nunca no cliente.** Nada de API key, secret de JWT, senha de banco, service-role key ou token em bundle do browser nem em variável pública de build. Segredo só server-side (secret manager, injetado no processo). Detalhe em `references/seguranca.md`.
 - **SQL sempre parametrizado.** Concatenar string em query é injeção esperando acontecer.
 - **Auth e autorização server-side.** `tenant_id`/role/`user_id` vêm do token verificado, nunca do body/header do cliente. Validação no front é UX, não controle.
-- **JWT validado por inteiro** (assinatura, exp, aud, iss, alg em allowlist). Senha em bcrypt cost ≥ 12 ou argon2id. Token/id de sessão por CSPRNG, nunca `Math.random()`.
-- **Erro nunca engolido** (`catch {}`, `except: pass`, `_ = err`); sem `any`/`@ts-ignore`/`unwrap()` pra calar o compilador.
-- **Teste nunca silenciado** pra passar CI (`.skip`, comentar assert, baixar threshold de cobertura). Conserta o código, não o teste.
+- **JWT validado por inteiro** (assinatura, exp, aud, iss, alg em allowlist). Senha nova em **argon2id** (`golang.org/x/crypto/argon2`, parâmetros mínimos e rehash de legado em `schematize-engineering` → `references/iam.md`); bcrypt/PBKDF2 só como legado a migrar no próximo login. Token/id de sessão por CSPRNG (`crypto/rand`), nunca `math/rand`.
+- **Erro nunca engolido** (`_ = err`, `if err != nil { }` vazio, `recover()` que cala); sem `//nolint` sem justificativa, `panic` fora de `main`/init, nem `interface{}`/`any` + type assertion sem checar (`v, ok :=`) só pra calar o compilador. Erros embrulhados com `%w` e inspecionados com `errors.Is`/`errors.As`.
+- **Teste nunca silenciado** pra passar CI (`t.Skip`, comentar assert, baixar threshold de cobertura, tirar `-race`). Conserta o código, não o teste.
 - **Sem monólito que mistura bounded contexts**, sem monólito distribuído, sem shared lib `commons` de domínio. Detalhe em `references/arquitetura.md`.
 - **Archive SEMPRE gerado.** Toda entrega que produz código/decisão/mudança de estado gera o `.md` de archive (§28) — é parte da entrega, não extra. Pular é violação direta. Templates em `assets/`.
 - **Migration reversível** (com `down`, testada com rollback). Container não-root, read-only. Dependência nova com nome/licença/versão verificados (typosquatting é real).
 - **Pisos de código (`references/padroes-codigo.md`):** arquivos **≤ 750 linhas** (teto duro: ~250 de comentário + ~500 de código útil; acima → quebrar por coesão), **flag em > 300 linhas de código útil** (não bloqueia, mas sempre sinaliza — indício de função extensa/falta de abstração, revê depois; observabilidade ~400), **uma função/unidade lógica por arquivo**, **toda função com doc-comment** (motivo, comportamento esperado, entradas, saídas, efeitos), **`MAPA.md` da aplicação** atualizado no mesmo PR — em **`<projeto>_archive/index/`, nunca no root** — e **índice de microfunções** regenerado (`/go-index`). **Todo MD gerado (MAPA/índice/plano/relatório/handoff) mora no archive**, root limpo (§28). Detalhe também em `references/arquitetura.md` (§6) e `schematize-engineering` -> `references/operacao.md` (§28, §39).
-- **Backend novo só em Go ou Rust; Node backend é proibido.** Node legado não se mexe salvo solicitado; migração medida por funcionalidade do módulo (~30% afetado → extrai pra módulo Go/Rust à parte; ~50% extraído → migra o resto; ajuste pontual não porta). **PHP é proibido** e migra sumariamente. **Frontend Node é 100% permitido** (Next.js principal; Astro e outros) — só frontend. Detalhe em `references/arquitetura.md` (§3).
+- **Backend novo só no ROL sancionado (Go/Rust/Elixir/C#/Zig/Ruby), escolhido por fit + ADR** (`schematize-engineering` → `references/linguagens.md`). Esta skill é o recorte Go, não a régua das outras. **Node como serviço backend e PHP são legado/fora do rol** — não recebem serviço novo; migração medida por funcionalidade do módulo (~30% afetado → extrai; ~50% extraído → continua extraindo até apagar o legado); PHP migra por funcionalidade quando tocado. **Frontend Node é 100% permitido** (só frontend, `schematize-web`). Detalhe em `references/arquitetura.md` (§3).
 - **Fluxo de ambientes e ops (`references/ops.md`).** Toda mudança segue **dev local → teste local → GitHub → hml → prd**; **VETADO editar código direto no servidor** (hml/prd é imutável por edição manual, recebe só artefato do git). **100%** das operações no servidor (install/update/correção/config/migrate/rollback) passam pela **ferramenta do `<projeto>_ops`** — nunca à mão; o ops é **autônomo** (o usuário provisiona o servidor do zero sem a IA). **Instalação sempre paralela** = `nproc`; **falha no paralelo = serviços não independentes → corrigir a independência é prioridade máxima** (não serializar pra mascarar).
 - **Deploy destrutivo por seed + isolamento por usuário (`schematize-engineering` -> `references/ops.md` §2–§3).** O ops provisiona em **`/<app>/`** clonando os repos dentro; **`/<app>/.env` é o seeder global** (fonte única de config). **Todo redeploy é destrutivo na aplicação** — apaga a anterior e recria um clone zerado só com o seed (idempotente/sem drift), **preservando os dados** (migration reversível; `ops reset` de dados só em dev/hml). **Cada serviço roda como user Linux próprio em systemd unit hardened** (blast radius mínimo). Tudo automatizado pelo ops.
 - **IAM por desenho (`references/iam.md`).** Todo projeto começa com identidade+autorização robustas, e o **auth é app SEPARADA** — **microserviço Go** `<projeto>_auth_go` + front próprio em `auth.<domain>`, isolados; nunca monolith (nem `internal/auth`); apps delegam por OIDC/PKCE e validam por JWKS público. **ID interno imutável (ULID/UUIDv7) — email/telefone nunca é ID** (múltiplos emails; SSO com recuperação local). **≥2 fatores sempre** (passkey/WebAuthn no núcleo, TOTP/push, email OTP Resend always-on, Twilio; providers como interfaces Go; senha argon2id+HIBP por padrão mas opcional); invariante de troca de fator; **recuperação ≥ login**. **Multi-tenant RBAC/ABAC granular via ReBAC** (OpenFGA/SpiceDB; deny-default, PDP=Check API / PEP=middleware Go, server-side, token fino). **Multi-dispositivo, sessão 7d/90d, logout irreversível.** **Migrar auth legado = prioridade 0.** Scaffold/auditoria por **`/go-iam`**; testes cross-tenant/priv-esc na `schematize-pentest`.

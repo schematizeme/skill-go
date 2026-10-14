@@ -1,6 +1,6 @@
 # schematize-go
 
-> Padrões normativos de engenharia da casa — **Go principal, Rust auxiliar**. Arquitetura, segurança, testes/pentest, dados, observabilidade, deploy e archive.
+> Padrões normativos de engenharia da casa — o **recorte Go** do rol sancionado (Go, Rust, Elixir, C#, Zig, Ruby, por fit + ADR). Arquitetura, segurança, testes/pentest, dados, observabilidade, deploy e archive.
 
 Pacote de **skill normativa para [Claude Code](https://claude.com/claude-code)**.
 Parte do catálogo **schematize skills** ([skills.schematize.me](https://skills.schematize.me)).
@@ -66,8 +66,8 @@ Digite `/go-help` dentro do Claude Code para ver a lista completa.
 
 ## Skills irmãs
 
-- [skill-go](https://github.com/schematizeme/skill-go) — backend Go principal.
-- [skill-rust](https://github.com/schematizeme/skill-rust) — backend Rust principal.
+- [skill-go](https://github.com/schematizeme/skill-go) — recorte Go do rol sancionado.
+- [skill-rust](https://github.com/schematizeme/skill-rust) — recorte Rust do rol sancionado.
 - [skill-web](https://github.com/schematizeme/skill-web) — frontend / SEO / performance.
 
 As três podem ficar habilitadas ao mesmo tempo: os comandos são namespaced por skill
